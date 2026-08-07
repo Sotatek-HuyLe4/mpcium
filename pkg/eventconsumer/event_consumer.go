@@ -142,18 +142,21 @@ func (ec *eventConsumer) handleKeyGenEvent(natMsg *nats.Msg) {
 	if err := json.Unmarshal(raw, &msg); err != nil {
 		logger.Error("Failed to unmarshal keygen message", err)
 		ec.handleKeygenSessionError(msg.WalletID, err, "Failed to unmarshal keygen message", natMsg)
+
 		return
 	}
 
 	if err := ec.identityStore.VerifyInitiatorMessage(&msg); err != nil {
 		logger.Error("Failed to verify initiator message", err)
 		ec.handleKeygenSessionError(msg.WalletID, err, "Failed to verify initiator message", natMsg)
+
 		return
 	}
 
 	if err := ec.identityStore.AuthorizeInitiatorMessage(&msg); err != nil {
 		logger.Error("Failed to authorize initiator message", err)
 		ec.handleKeygenSessionError(msg.WalletID, err, "Failed to authorize initiator message", natMsg)
+
 		return
 	}
 
@@ -170,26 +173,29 @@ func (ec *eventConsumer) handleKeyGenEvent(natMsg *nats.Msg) {
 
 	// Attempt to get previously stored wallet creation result (if any) by the wallet ID
 	storedWalletCreationResult, storedWalletCreationResultError := ec.node.GetWalletCreationResult(walletID)
-
 	// Error when retrieving wallet creation result for the wallet ID
 	if storedWalletCreationResultError != nil && !errors.Is(storedWalletCreationResultError, badger.ErrKeyNotFound) {
 		ec.handleKeygenSessionError(walletID, storedWalletCreationResultError, "Failed to check stored wallet creation result", natMsg)
+
 		return
 	}
 
 	// Replay the wallet creation result if it already exists for the wallet ID
 	// TODO: to move the following duplicate logic (line 308 and line 341) into a func
 	if storedWalletCreationResult != nil {
-		key := event.KeygenResultSubject(natMsg.Header.Get(event.ClientIDHeader), walletID)
-		if err := ec.genKeyResultQueue.Enqueue(key, storedWalletCreationResult, &messaging.EnqueueOptions{
+		topic := event.KeygenResultSubject(natMsg.Header.Get(event.ClientIDHeader), walletID)
+		if err := ec.genKeyResultQueue.Enqueue(topic, storedWalletCreationResult, &messaging.EnqueueOptions{
 			IdempotententKey: composeKeygenIdempotentKey(walletID, natMsg),
 		}); err != nil {
 			logger.Error("Failed to enqueue stored wallet creation result", err, "walletID", walletID)
 			ec.handleKeygenSessionError(walletID, err, "Failed to enqueue stored wallet creation result", natMsg)
+
 			return
 		}
+
 		ec.sendReplyToRemoveMsg(natMsg)
 		logger.Info("Returned stored wallet creation result for existing wallet", "walletID", walletID)
+
 		return
 	}
 
@@ -199,6 +205,7 @@ func (ec *eventConsumer) handleKeyGenEvent(natMsg *nats.Msg) {
 	if !ec.tryAddSession(walletID, "keygen") {
 		duplicateErr := fmt.Errorf("duplicate keygen request detected for walletID=%s", walletID)
 		ec.handleKeygenSessionError(walletID, duplicateErr, "Duplicate keygen session", natMsg)
+
 		return
 	}
 	defer ec.removeSession(walletID, "keygen")
@@ -206,11 +213,13 @@ func (ec *eventConsumer) handleKeyGenEvent(natMsg *nats.Msg) {
 	ecdsaSession, err := ec.node.CreateKeyGenSession(mpc.SessionTypeECDSA, walletID, ec.mpcThreshold, ec.genKeyResultQueue, sessionNonce)
 	if err != nil {
 		ec.handleKeygenSessionError(walletID, err, "Failed to create ECDSA key generation session", natMsg)
+
 		return
 	}
 	eddsaSession, err := ec.node.CreateKeyGenSession(mpc.SessionTypeEDDSA, walletID, ec.mpcThreshold, ec.genKeyResultQueue, sessionNonce)
 	if err != nil {
 		ec.handleKeygenSessionError(walletID, err, "Failed to create EdDSA key generation session", natMsg)
+		
 		return
 	}
 	if err := ecdsaSession.Init(); err != nil {
@@ -244,6 +253,7 @@ func (ec *eventConsumer) handleKeyGenEvent(natMsg *nats.Msg) {
 			doneEcdsa()
 		}
 	}()
+
 	go func() {
 		defer wg.Done()
 		select {
@@ -279,6 +289,7 @@ func (ec *eventConsumer) handleKeyGenEvent(natMsg *nats.Msg) {
 		ec.handleKeygenSessionError(walletID, barrierErr, "Peers not ready before keygen", natMsg)
 		return
 	}
+
 	go ecdsaSession.GenerateKey(doneEcdsa)
 	go eddsaSession.GenerateKey(doneEddsa)
 
@@ -303,6 +314,7 @@ func (ec *eventConsumer) handleKeyGenEvent(natMsg *nats.Msg) {
 		// timeout occurred
 		logger.Warn("Key generation timed out", "walletID", walletID, "timeout", KeyGenTimeOut)
 		ec.handleKeygenSessionError(walletID, fmt.Errorf("keygen session timed out after %v", KeyGenTimeOut), "Key generation timed out", natMsg)
+
 		return
 	}
 
@@ -310,6 +322,7 @@ func (ec *eventConsumer) handleKeyGenEvent(natMsg *nats.Msg) {
 	if err != nil {
 		logger.Error("Failed to marshal keygen success event", err)
 		ec.handleKeygenSessionError(walletID, err, "Failed to marshal keygen success event", natMsg)
+
 		return
 	}
 
@@ -317,12 +330,13 @@ func (ec *eventConsumer) handleKeyGenEvent(natMsg *nats.Msg) {
 	if storeErr := ec.node.StoreWalletCreationResult(walletID, payload); storeErr != nil {
 		logger.Error("Failed to store wallet creation result", storeErr, "walletID", walletID)
 		ec.handleKeygenSessionError(walletID, storeErr, "Failed to store wallet creation result", natMsg)
+
 		return
 	}
 
-	key := event.KeygenResultSubject(natMsg.Header.Get(event.ClientIDHeader), walletID)
+	topic := event.KeygenResultSubject(natMsg.Header.Get(event.ClientIDHeader), walletID)
 	if err := ec.genKeyResultQueue.Enqueue(
-		key,
+		topic,
 		payload,
 		&messaging.EnqueueOptions{IdempotententKey: composeKeygenIdempotentKey(walletID, natMsg)},
 	); err != nil {
@@ -330,6 +344,7 @@ func (ec *eventConsumer) handleKeyGenEvent(natMsg *nats.Msg) {
 		ec.handleKeygenSessionError(walletID, err, "Failed to publish key generation success message", natMsg)
 		return
 	}
+	
 	ec.sendReplyToRemoveMsg(natMsg)
 	logger.Info("[COMPLETED KEY GEN] Key generation completed successfully", "walletID", walletID)
 }
@@ -353,8 +368,8 @@ func (ec *eventConsumer) handleKeygenSessionError(walletID string, err error, co
 		return
 	}
 
-	key := event.KeygenResultSubject(natMsg.Header.Get(event.ClientIDHeader), walletID)
-	err = ec.genKeyResultQueue.Enqueue(key, keygenResultBytes, &messaging.EnqueueOptions{
+	topic := event.KeygenResultSubject(natMsg.Header.Get(event.ClientIDHeader), walletID)
+	err = ec.genKeyResultQueue.Enqueue(topic, keygenResultBytes, &messaging.EnqueueOptions{
 		IdempotententKey: composeKeygenIdempotentKey(walletID, natMsg),
 	})
 	if err != nil {
@@ -363,6 +378,7 @@ func (ec *eventConsumer) handleKeygenSessionError(walletID string, err error, co
 			"payload", string(keygenResultBytes),
 		)
 	}
+
 	ec.sendReplyToRemoveMsg(natMsg)
 }
 
@@ -372,8 +388,10 @@ func (ec *eventConsumer) startKeyGenEventWorker() {
 
 	for natMsg := range ec.keygenMsgBuffer {
 		semaphore <- struct{}{} // acquire a slot
+
 		go func(msg *nats.Msg) {
 			defer func() { <-semaphore }() // release the slot when done
+
 			ec.handleKeyGenEvent(msg)
 		}(natMsg)
 	}
@@ -652,6 +670,7 @@ func (ec *eventConsumer) sendReplyToRemoveMsg(natMsg *nats.Msg) {
 
 	if natMsg.Reply == "" {
 		logger.Warn("No reply inbox specified for sign success message", "msg", string(msg))
+
 		return
 	}
 
@@ -972,10 +991,12 @@ func (ec *eventConsumer) tryAddSession(walletID, txID string) bool {
 
 	if _, exists := ec.activeSessions[sessionID]; exists {
 		logger.Info("Duplicate session detected", "walletID", walletID, "txID", txID)
+
 		return false
 	}
 
 	ec.activeSessions[sessionID] = time.Now()
+
 	return true
 }
 

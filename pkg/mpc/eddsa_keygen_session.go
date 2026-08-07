@@ -8,6 +8,7 @@ import (
 	"github.com/bnb-chain/tss-lib/v3/eddsa/keygen"
 	"github.com/bnb-chain/tss-lib/v3/tss"
 	"github.com/decred/dcrd/dcrec/edwards/v2"
+
 	"github.com/fystack/mpcium/pkg/identity"
 	"github.com/fystack/mpcium/pkg/keyinfo"
 	"github.com/fystack/mpcium/pkg/kvstore"

@@ -6,12 +6,13 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/nats-io/nats.go"
+
 	"github.com/fystack/mpcium/pkg/event"
 	"github.com/fystack/mpcium/pkg/eventconsumer"
 	"github.com/fystack/mpcium/pkg/logger"
 	"github.com/fystack/mpcium/pkg/messaging"
 	"github.com/fystack/mpcium/pkg/types"
-	"github.com/nats-io/nats.go"
 )
 
 type MPCClient interface {
@@ -130,6 +131,7 @@ func (c *mpcClient) CreateWalletWithAuthorizers(walletID string, authorizerSigna
 	if err != nil {
 		return fmt.Errorf("CreateWallet: raw payload error: %w", err)
 	}
+
 	signature, err := c.signer.Sign(raw)
 	if err != nil {
 		return fmt.Errorf("CreateWallet: failed to sign message: %w", err)
@@ -144,6 +146,7 @@ func (c *mpcClient) CreateWalletWithAuthorizers(walletID string, authorizerSigna
 	if err := c.keygenBroker.PublishMessage(context.Background(), event.KeygenRequestTopic, bytes, c.requestHeaders()); err != nil {
 		return fmt.Errorf("CreateWallet: publish error: %w", err)
 	}
+
 	return nil
 }
 
@@ -155,7 +158,9 @@ func (c *mpcClient) OnWalletCreationResult(callback func(event event.KeygenResul
 		if err != nil {
 			return err
 		}
+
 		callback(event)
+
 		return nil
 	})
 

@@ -91,13 +91,20 @@ func (m *NATsMessageQueueManager) NewMessageQueue(consumerName, filterSubject st
 		},
 		MaxDeliver: 3,
 	}
-	logger.Info("Creating consumer for subject", "consumerName", sanitizedConsumerName, "queueName", m.queueName, "filterSubject", filterSubject, "config", cfg)
+
+	logger.Info("Creating consumer for subject",
+		"consumerName", sanitizedConsumerName,
+		"queueName", m.queueName,
+		"filterSubject", filterSubject,
+		"config", cfg)
+
 	consumer, err := m.js.CreateOrUpdateConsumer(context.Background(), m.queueName, cfg)
 	if err != nil {
 		logger.Fatal("Error creating JetStream consumer: ", err)
 	}
 
 	mq.consumer = consumer
+	
 	return mq
 }
 
@@ -149,7 +156,9 @@ func (mq *msgQueue) Dequeue(topic string, handler func(message []byte) error) er
 			logger.Error("Error acknowledging message: ", err)
 		}
 	})
+
 	mq.consumerContext = c
+	
 	return err
 }
 

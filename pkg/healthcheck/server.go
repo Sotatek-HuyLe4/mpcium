@@ -8,10 +8,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/fystack/mpcium/pkg/logger"
-	"github.com/fystack/mpcium/pkg/mpc"
 	"github.com/hashicorp/consul/api"
 	"github.com/nats-io/nats.go"
+
+	"github.com/fystack/mpcium/pkg/logger"
+	"github.com/fystack/mpcium/pkg/mpc"
 )
 
 // Server provides HTTP health check endpoints for Kubernetes probes
@@ -24,10 +25,10 @@ type Server struct {
 
 // HealthResponse represents the JSON response for health check endpoints
 type HealthResponse struct {
-	Status    string         `json:"status"`
-	Live      bool           `json:"live"`
-	Ready     bool           `json:"ready"`
-	Details   map[string]any `json:"details,omitempty"`
+	Status  string         `json:"status"`
+	Live    bool           `json:"live"`
+	Ready   bool           `json:"ready"`
+	Details map[string]any `json:"details,omitempty"`
 }
 
 // NewServer creates a new health check HTTP server

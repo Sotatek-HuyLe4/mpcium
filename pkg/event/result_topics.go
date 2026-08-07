@@ -63,5 +63,6 @@ func scopedSubject(prefix, clientID, tail string) string {
 		parts = append(parts, clientID)
 	}
 	parts = append(parts, tail)
+	
 	return strings.Join(parts, ".")
 }

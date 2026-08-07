@@ -97,6 +97,7 @@ func (s *ecdsaKeygenSession) Init() error {
 
 func (s *ecdsaKeygenSession) GenerateKey(done func()) {
 	logger.Info("Starting to generate key ECDSA", "walletID", s.walletID)
+
 	go func() {
 		if err := s.party.Start(); err != nil {
 			s.ErrCh <- err
@@ -109,6 +110,7 @@ func (s *ecdsaKeygenSession) GenerateKey(done func()) {
 			s.handleTssMessage(msg)
 		case saveData := <-s.endCh:
 			defer security.ZeroEcdsaKeygenLocalPartySaveData(saveData)
+
 			keyBytes, err := json.Marshal(saveData)
 			if err != nil {
 				s.ErrCh <- err
@@ -133,11 +135,11 @@ func (s *ecdsaKeygenSession) GenerateKey(done func()) {
 			if err != nil {
 				logger.Error("Failed to save keyinfo", err, "walletID", s.walletID)
 				s.ErrCh <- err
+
 				return
 			}
 
 			publicKey := saveData.ECDSAPub
-
 			pubKey := &ecdsa.PublicKey{
 				Curve: publicKey.Curve(),
 				X:     publicKey.X(),
@@ -148,14 +150,18 @@ func (s *ecdsaKeygenSession) GenerateKey(done func()) {
 			if err != nil {
 				logger.Error("failed to encode public key", err)
 				s.ErrCh <- fmt.Errorf("failed to encode public key: %w", err)
+
 				return
 			}
+
 			s.pubkeyBytes = pubKeyBytes
 			err = s.Close()
 			if err != nil {
 				logger.Error("Failed to close session", err)
 			}
+
 			done()
+			
 			return
 		}
 	}

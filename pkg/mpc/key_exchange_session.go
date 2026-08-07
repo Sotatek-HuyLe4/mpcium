@@ -4,20 +4,18 @@ import (
 	"crypto/ecdh"
 	"crypto/rand"
 	"crypto/sha256"
+	"encoding/json"
+	"fmt"
+	"time"
 
 	"golang.org/x/crypto/hkdf"
 
-	"fmt"
-	"time"
+	"github.com/nats-io/nats.go"
 
 	"github.com/fystack/mpcium/pkg/identity"
 	"github.com/fystack/mpcium/pkg/logger"
 	"github.com/fystack/mpcium/pkg/messaging"
 	"github.com/fystack/mpcium/pkg/types"
-
-	"encoding/json"
-
-	"github.com/nats-io/nats.go"
 )
 
 const (
@@ -159,17 +157,20 @@ func (e *ecdhSession) BroadcastPublicKey() error {
 	if e == nil || e.publicKey == nil {
 		return fmt.Errorf("ecdh session %s has no public key to broadcast yet", e.nodeID)
 	}
+
 	publicKeyBytes := e.publicKey.Bytes()
 	msg := types.ECDHMessage{
 		From:      e.nodeID,
 		PublicKey: publicKeyBytes,
 		Timestamp: time.Now(),
 	}
+
 	//Sign the message using existing identity store
 	signature, err := e.identityStore.SignEcdhMessage(&msg)
 	if err != nil {
 		return fmt.Errorf("failed to sign ECDH message: %w", err)
 	}
+
 	msg.Signature = signature
 	signedMsgBytes, _ := json.Marshal(msg)
 
@@ -177,6 +178,7 @@ func (e *ecdhSession) BroadcastPublicKey() error {
 	if err := e.pubSub.Publish(ECDHExchangeTopic, signedMsgBytes, nil); err != nil {
 		return fmt.Errorf("%s failed to publish DH message because %w", e.nodeID, err)
 	}
+
 	return nil
 }
 

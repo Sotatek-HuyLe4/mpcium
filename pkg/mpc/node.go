@@ -123,6 +123,7 @@ func (p *Node) createECDSAKeyGenSession(walletID string, threshold int, version 
 		p.identityStore,
 		sessionNonce,
 	)
+	
 	return session, nil
 }
 
@@ -143,6 +144,7 @@ func (p *Node) createEDDSAKeyGenSession(walletID string, threshold int, version 
 		p.identityStore,
 		sessionNonce,
 	)
+
 	return session, nil
 }
 
@@ -423,11 +425,13 @@ const walletCreationResultPrefix = "wallet_creation_result_prefix"
 
 func (p *Node) StoreWalletCreationResult(walletID string, result []byte) error {
 	key := fmt.Sprintf("%s:%s", walletCreationResultPrefix, walletID)
+	
 	return p.kvstore.Put(key, result)
 }
 
 func (p *Node) GetWalletCreationResult(walletID string) ([]byte, error) {
 	key := fmt.Sprintf("%s:%s", walletCreationResultPrefix, walletID)
+
 	return p.kvstore.Get(key)
 }
 

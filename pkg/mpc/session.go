@@ -140,11 +140,11 @@ func (s *session) handleTssMessage(keyshare tss.Message) {
 	data, routing, err := keyshare.WireBytes()
 	if err != nil {
 		s.sendErr(err)
+
 		return
 	}
 
 	tssMsg := types.NewTssMessage(s.walletID, data, routing.IsBroadcast, routing.From, routing.To)
-
 	toIDs := make([]string, len(routing.To))
 	for i, id := range routing.To {
 		toIDs[i] = id.String()
@@ -166,6 +166,7 @@ func (s *session) handleTssMessage(keyshare tss.Message) {
 			s.sendErr(fmt.Errorf("failed to sign message: %w", err))
 			return
 		}
+
 		tssMsg.Signature = signature
 		msg, err := types.MarshalTssMessage(&tssMsg)
 		if err != nil {
@@ -176,6 +177,7 @@ func (s *session) handleTssMessage(keyshare tss.Message) {
 		err = s.pubSub.Publish(s.topicComposer.ComposeBroadcastTopic(), msg, nil)
 		if err != nil {
 			s.sendErr(err)
+
 			return
 		}
 	} else {
@@ -190,6 +192,7 @@ func (s *session) handleTssMessage(keyshare tss.Message) {
 		for _, to := range routing.To {
 			toNodeID := partyIDToNodeID(to)
 			topic := s.topicComposer.ComposeDirectTopic(selfID, toNodeID)
+
 			if selfID == toNodeID {
 				err := s.direct.SendToSelf(topic, msg)
 				if err != nil {
@@ -202,6 +205,7 @@ func (s *session) handleTssMessage(keyshare tss.Message) {
 					s.sendErr(fmt.Errorf("encrypt tss message error %w", err))
 					logger.Error("Encrypt tss message error", err, "topic", topic)
 				}
+				
 				err = s.direct.SendToOther(topic, cipher)
 				if err != nil {
 					logger.Error("Failed in SendToOther direct message", err, "topic", topic)
@@ -228,9 +232,11 @@ func (s *session) receiveP2PTssMessage(topic string, cipher []byte) {
 		plaintext, err = s.identityStore.DecryptMessage(cipher, senderID)
 		if err != nil {
 			s.sendErr(fmt.Errorf("failed to decrypt message: %w, tampered message", err))
+
 			return
 		}
 	}
+
 	msg, err := types.UnmarshalTssMessage(plaintext)
 	if err != nil {
 		s.sendErr(fmt.Errorf("failed to unmarshal message: %w", err))
@@ -241,7 +247,6 @@ func (s *session) receiveP2PTssMessage(topic string, cipher []byte) {
 }
 
 func (s *session) receiveBroadcastTssMessage(rawMsg []byte) {
-
 	msg, err := types.UnmarshalTssMessage(rawMsg)
 	if err != nil {
 		s.sendErr(fmt.Errorf("failed to unmarshal message: %w", err))
@@ -293,6 +298,7 @@ func (s *session) receiveTssMessage(msg *types.TssMessage) {
 		"self",
 		s.selfPartyID.String(),
 	)
+
 	isBroadcast := msg.IsBroadcast && len(msg.To) == 0
 	var isToSelf bool
 	for _, to := range msg.To {
@@ -305,6 +311,7 @@ func (s *session) receiveTssMessage(msg *types.TssMessage) {
 	if isBroadcast || isToSelf {
 		s.mu.Lock()
 		defer s.mu.Unlock()
+
 		ok, err := s.party.UpdateFromBytes(msg.MsgBytes, msg.From, msg.IsBroadcast)
 		if !ok || err != nil {
 			logger.Error("Failed to update party", err, "walletID", s.walletID)
@@ -323,6 +330,7 @@ func (s *session) subscribeDirectTopicAsync(topic string) error {
 		return fmt.Errorf("Failed to subscribe to direct topic %s: %w", t, err)
 	}
 	s.directSubs = append(s.directSubs, sub)
+
 	return nil
 }
 
@@ -346,6 +354,7 @@ func (s *session) subscribeBroadcastAsync() {
 			s.sendErr(fmt.Errorf("Failed to subscribe to broadcast topic %s: %w", topic, err))
 			return
 		}
+
 		s.broadcastSub = sub
 	}()
 }

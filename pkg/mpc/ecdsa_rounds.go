@@ -40,6 +40,7 @@ func GetEcdsaMsgRound(msg []byte, partyID *tss.PartyID, isBroadcast bool) (Round
 	if err != nil {
 		return RoundInfo{}, err
 	}
+
 	switch parsedMsg.Content().(type) {
 	case *keygen.KGRound1Message:
 		return RoundInfo{
@@ -163,5 +164,11 @@ func GetEcdsaMsgRound(msg []byte, partyID *tss.PartyID, isBroadcast bool) (Round
 }
 
 func IsReshareRound(roundMsg string) bool {
-	return roundMsg == KEYRESHARING1Unicast || roundMsg == KEYRESHARING2aUnicast || roundMsg == KEYRESHARING2bUnicast || roundMsg == KEYRESHARING3aUnicast || roundMsg == KEYRESHARING3b || roundMsg == KEYRESHARING4a || roundMsg == KEYRESHARING4bUnicast
+	return roundMsg == KEYRESHARING1Unicast ||
+		roundMsg == KEYRESHARING2aUnicast ||
+		roundMsg == KEYRESHARING2bUnicast ||
+		roundMsg == KEYRESHARING3aUnicast ||
+		roundMsg == KEYRESHARING3b ||
+		roundMsg == KEYRESHARING4a ||
+		roundMsg == KEYRESHARING4bUnicast
 }

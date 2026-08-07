@@ -39,6 +39,7 @@ func (n *natsPubSub) Publish(topic string, message []byte, headers map[string]st
 		Header:  nats.Header{},
 	}
 	applyHeaders(msg.Header, headers)
+
 	return n.natsConn.PublishMsg(msg)
 }
 
@@ -50,8 +51,8 @@ func (n *natsPubSub) PublishWithReply(topic, reply string, data []byte, headers 
 		Header:  nats.Header{},
 	}
 	applyHeaders(msg.Header, headers)
-	err := n.natsConn.PublishMsg(msg)
-	return err
+
+	return n.natsConn.PublishMsg(msg)
 }
 
 func (n *natsPubSub) Subscribe(topic string, handler func(msg *nats.Msg)) (Subscription, error) {

@@ -51,7 +51,13 @@ type signingConsumer struct {
 }
 
 // NewSigningConsumer returns a new instance of SigningConsumer.
-func NewSigningConsumer(natsConn *nats.Conn, jsBroker messaging.MessageBroker, pubsub messaging.PubSub, peerRegistry mpc.PeerRegistry, signingResultQueue messaging.MessageQueue) SigningConsumer {
+func NewSigningConsumer(
+	natsConn *nats.Conn,
+	jsBroker messaging.MessageBroker,
+	pubsub messaging.PubSub,
+	peerRegistry mpc.PeerRegistry,
+	signingResultQueue messaging.MessageQueue,
+) SigningConsumer {
 	mpcThreshold := viper.GetInt("mpc_threshold")
 	return &signingConsumer{
 		natsConn:           natsConn,

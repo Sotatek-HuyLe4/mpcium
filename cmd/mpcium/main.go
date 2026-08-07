@@ -12,6 +12,12 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/hashicorp/consul/api"
+	"github.com/nats-io/nats.go"
+	"github.com/spf13/viper"
+	"github.com/urfave/cli/v3"
+	"golang.org/x/term"
+
 	"github.com/fystack/mpcium/pkg/config"
 	"github.com/fystack/mpcium/pkg/constant"
 	"github.com/fystack/mpcium/pkg/event"
@@ -25,11 +31,6 @@ import (
 	"github.com/fystack/mpcium/pkg/messaging"
 	"github.com/fystack/mpcium/pkg/mpc"
 	"github.com/fystack/mpcium/pkg/security"
-	"github.com/hashicorp/consul/api"
-	"github.com/nats-io/nats.go"
-	"github.com/spf13/viper"
-	"github.com/urfave/cli/v3"
-	"golang.org/x/term"
 )
 
 const (
@@ -274,6 +275,7 @@ func runNode(ctx context.Context, c *cli.Command) error {
 
 	timeoutConsumer.Run()
 	defer timeoutConsumer.Close()
+
 	keygenConsumer := eventconsumer.NewKeygenConsumer(natsConn, keygenBroker, pubsub, peerRegistry, genKeyResultQueue)
 	signingConsumer := eventconsumer.NewSigningConsumer(natsConn, signingBroker, pubsub, peerRegistry, singingResultQueue)
 
@@ -290,7 +292,9 @@ func runNode(ctx context.Context, c *cli.Command) error {
 		if healthAddr == "" {
 			healthAddr = ":8080"
 		}
+
 		healthServer = healthcheck.NewServer(healthAddr, peerRegistry, natsConn, consulClient)
+
 		go func() {
 			if err := healthServer.Start(); err != nil {
 				logger.Error("Health check server error", err)
@@ -300,6 +304,7 @@ func runNode(ctx context.Context, c *cli.Command) error {
 
 	logger.Info("Starting consumers", "nodeID", nodeID)
 	appContext, cancel := context.WithCancel(context.Background())
+
 	//Setup signal handling to cancel context on termination signals.
 	go func() {
 		sigChan := make(chan os.Signal, 1)
@@ -312,6 +317,7 @@ func runNode(ctx context.Context, c *cli.Command) error {
 		if healthServer != nil {
 			shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer shutdownCancel()
+
 			if err := healthServer.Shutdown(shutdownCtx); err != nil {
 				logger.Error("Failed to shutdown health check server", err)
 			}
@@ -342,6 +348,7 @@ func runNode(ctx context.Context, c *cli.Command) error {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+
 		if err := keygenConsumer.Run(appContext); err != nil {
 			if appContext.Err() != context.Canceled {
 				logger.Error("error running keygen consumer", err)
@@ -349,14 +356,17 @@ func runNode(ctx context.Context, c *cli.Command) error {
 			} else {
 				logger.Info("Keygen consumer finished successfully")
 			}
+
 			return
 		}
+
 		logger.Info("Keygen consumer finished successfully")
 	}()
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+
 		if err := signingConsumer.Run(appContext); err != nil {
 			if appContext.Err() != context.Canceled {
 				logger.Error("error running signing consumer", err)
@@ -364,8 +374,10 @@ func runNode(ctx context.Context, c *cli.Command) error {
 			} else {
 				logger.Info("Signing consumer finished successfully")
 			}
+
 			return
 		}
+
 		logger.Info("Signing consumer finished successfully")
 	}()
 
@@ -374,6 +386,7 @@ func runNode(ctx context.Context, c *cli.Command) error {
 		logger.Info("All consumers have finished")
 		close(errChan)
 	}()
+	
 	for err := range errChan {
 		if err != nil {
 			logger.Error("Consumer error received", err)

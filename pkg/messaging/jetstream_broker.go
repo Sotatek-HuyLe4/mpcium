@@ -273,6 +273,7 @@ func (b *jetStreamBroker) CreateSubscription(
 	}
 
 	logger.Info("Subscription created successfully", "consumer", sanitizedName, "subject", subject)
+	
 	return subscription, nil
 }
 

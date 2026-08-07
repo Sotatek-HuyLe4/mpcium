@@ -65,7 +65,6 @@ func NewKeygenConsumer(
 }
 
 func (sc *keygenConsumer) waitForAllPeersReadyToGenKey(ctx context.Context) error {
-
 	logger.Info("KeygenConsumer: Waiting for all peers to be ready before consuming messages")
 
 	ticker := time.NewTicker(readinessCheckInterval)
@@ -84,6 +83,7 @@ func (sc *keygenConsumer) waitForAllPeersReadyToGenKey(ctx context.Context) erro
 
 			if allPeersReady {
 				logger.Info("KeygenConsumer: All peers are ready, proceeding to consume messages")
+
 				return nil
 			} else {
 				logger.Info("KeygenConsumer: Waiting for all peers to be ready",
@@ -113,10 +113,13 @@ func (sc *keygenConsumer) Run(ctx context.Context) error {
 	if err != nil {
 		if ctx.Err() == context.Canceled {
 			logger.Info("KeygenConsumer: Shutdown during subscription setup")
+
 			return nil
 		}
+
 		return fmt.Errorf("failed to subscribe to keygen events: %w", err)
 	}
+
 	sc.jsSub = sub
 	logger.Info("SigningConsumer: Subscribed to keygen events")
 
@@ -149,7 +152,7 @@ func (sc *keygenConsumer) handleKeygenEvent(msg jetstream.Msg) {
 		return
 	}
 
-	// Create a reply inbox to receive the signing event response.
+	// Create a reply inbox to receive the keygen event response.
 	replyInbox := nats.NewInbox()
 
 	// Use a synchronous subscription for the reply inbox.
@@ -187,19 +190,25 @@ func (sc *keygenConsumer) handleKeygenEvent(msg jetstream.Msg) {
 	deadline := time.Now().Add(keygenResponseTimeout)
 	for time.Now().Before(deadline) {
 		replyMsg, err := replySub.NextMsg(keygenPollingInterval)
+
 		if err != nil {
 			if err == nats.ErrTimeout {
 				_ = msg.InProgress()
 				continue
 			}
+
 			logger.Error("KeygenConsumer: Error receiving reply message", err)
+
 			break
 		}
+
 		if replyMsg != nil {
 			logger.Info("KeygenConsumer: Completed keygen event; reply received")
+			
 			if ackErr := msg.Ack(); ackErr != nil {
 				logger.Error("KeygenConsumer: ACK failed", ackErr)
 			}
+
 			return
 		}
 	}
@@ -210,7 +219,13 @@ func (sc *keygenConsumer) handleKeygenEvent(msg jetstream.Msg) {
 	_ = msg.Nak()
 }
 
-func (sc *keygenConsumer) handleKeygenError(keygenMsg types.GenerateKeyMessage, errorCode event.ErrorCode, err error, sessionID, clientID string) {
+func (sc *keygenConsumer) handleKeygenError(
+	keygenMsg types.GenerateKeyMessage,
+	errorCode event.ErrorCode,
+	err error,
+	sessionID,
+	clientID string,
+) {
 	keygenResult := event.KeygenResultEvent{
 		ResultType:  event.ResultTypeError,
 		ErrorCode:   string(errorCode),

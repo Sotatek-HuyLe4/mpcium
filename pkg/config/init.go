@@ -6,9 +6,10 @@ import (
 	"log"
 	"strings"
 
-	"github.com/fystack/mpcium/pkg/logger"
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/viper"
+
+	"github.com/fystack/mpcium/pkg/logger"
 )
 
 type AppConfig struct {
@@ -70,6 +71,7 @@ func InitViperConfig(configPath string) {
 		viper.AddConfigPath("/etc/mpcium/")   // look for config in /etc/mpcium/
 		viper.AddConfigPath("$HOME/.mpcium/") // look for config in home directory
 	}
+
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.AutomaticEnv()
 	err := viper.ReadInConfig() // Find and read the config file

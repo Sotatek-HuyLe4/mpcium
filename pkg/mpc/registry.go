@@ -8,13 +8,14 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/hashicorp/consul/api"
+	"github.com/samber/lo"
+	"github.com/spf13/viper"
+
 	"github.com/fystack/mpcium/pkg/identity"
 	"github.com/fystack/mpcium/pkg/infra"
 	"github.com/fystack/mpcium/pkg/logger"
 	"github.com/fystack/mpcium/pkg/messaging"
-	"github.com/hashicorp/consul/api"
-	"github.com/samber/lo"
-	"github.com/spf13/viper"
 )
 
 const (
@@ -175,7 +176,6 @@ func (r *registry) Ready() error {
 	}
 
 	k := r.readyKey(r.nodeID)
-
 	kv := &api.KVPair{
 		Key:   k,
 		Value: []byte("true"),

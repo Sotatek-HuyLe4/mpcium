@@ -18,12 +18,13 @@ import (
 	"github.com/bnb-chain/tss-lib/v3/tss"
 	"golang.org/x/term"
 
+	"github.com/spf13/viper"
+
 	"github.com/fystack/mpcium/pkg/common/pathutil"
 	"github.com/fystack/mpcium/pkg/encryption"
 	"github.com/fystack/mpcium/pkg/logger"
 	"github.com/fystack/mpcium/pkg/security"
 	"github.com/fystack/mpcium/pkg/types"
-	"github.com/spf13/viper"
 )
 
 // NodeIdentity represents a node's identity information
@@ -657,6 +658,7 @@ func (s *fileStore) verifyEd25519(msg types.InitiatorMessage) error {
 	if err != nil {
 		return fmt.Errorf("failed to get raw message data: %w", err)
 	}
+
 	signature := msg.Sig()
 	if len(signature) == 0 {
 		return errors.New("signature is empty")
@@ -665,6 +667,7 @@ func (s *fileStore) verifyEd25519(msg types.InitiatorMessage) error {
 	if !ed25519.Verify(s.initiatorKey.Ed25519, msgBytes, signature) {
 		return fmt.Errorf("invalid signature from initiator")
 	}
+	
 	return nil
 }
 

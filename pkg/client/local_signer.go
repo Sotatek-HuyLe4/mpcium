@@ -103,6 +103,7 @@ func (s *LocalSigner) loadEd25519Key(keyData []byte) error {
 	}
 
 	s.ed25519Key = ed25519.NewKeyFromSeed(privSeed)
+
 	return nil
 }
 
