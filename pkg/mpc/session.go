@@ -329,6 +329,7 @@ func (s *session) subscribeDirectTopicAsync(topic string) error {
 	if err != nil {
 		return fmt.Errorf("Failed to subscribe to direct topic %s: %w", t, err)
 	}
+
 	s.directSubs = append(s.directSubs, sub)
 
 	return nil
@@ -395,6 +396,7 @@ func (s *session) WaitForPeersReady() error {
 		if peerID == selfID {
 			continue // skip self
 		}
+		
 		peerBarrier := fmt.Sprintf("barrier:%s:%s", s.topicComposer.ComposeBroadcastTopic(), peerID)
 
 		// Retry until peer responds or timeout
@@ -501,6 +503,7 @@ func walletIDWithVersion(walletID string, version int) string {
 	if version > 0 {
 		return fmt.Sprintf("%s_v%d", walletID, version)
 	}
+	
 	return walletID
 }
 

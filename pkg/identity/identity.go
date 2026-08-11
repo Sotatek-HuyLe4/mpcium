@@ -290,7 +290,6 @@ func loadEd25519InitiatorKey() ([]byte, error) {
 	}
 
 	key, err := encryption.ParseEd25519PublicKeyFromHex(pubKeyHex)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode event_initiator_pubkey as hex: %w", err)
 	}
@@ -408,6 +407,7 @@ func loadPrivateKey(identityDir, nodeName string, decrypt bool, agePasswordFile 
 		if err != nil {
 			return "", fmt.Errorf("failed to read private key file: %w", err)
 		}
+
 		return string(privateKeyData), nil
 	}
 }
@@ -416,6 +416,7 @@ func loadPrivateKey(identityDir, nodeName string, decrypt bool, agePasswordFile 
 func (s *fileStore) SetSymmetricKey(peerID string, key []byte) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	
 	s.symmetricKeys[peerID] = key
 }
 
@@ -434,6 +435,7 @@ func (s *fileStore) GetSymmetricKey(peerID string) ([]byte, error) {
 func (s *fileStore) RemoveSymmetricKey(peerID string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
 	delete(s.symmetricKeys, peerID)
 }
 
@@ -446,6 +448,7 @@ func (s *fileStore) GetSymetricKeyCount() int {
 func (s *fileStore) CheckSymmetricKeyComplete(desired int) bool {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
+	
 	return len(s.symmetricKeys) == desired
 }
 
@@ -524,6 +527,7 @@ func (s *fileStore) DecryptMessage(cipher []byte, peerID string) ([]byte, error)
 	if key == nil {
 		return nil, fmt.Errorf("no symmetric key for peer %s", peerID)
 	}
+	
 	return encryption.DecryptAESGCMWithNonceEmbed(cipher, key)
 }
 
@@ -536,6 +540,7 @@ func (s *fileStore) SignEcdhMessage(msg *types.ECDHMessage) ([]byte, error) {
 	}
 
 	signature := ed25519.Sign(s.privateKey, msgBytes)
+
 	return signature, nil
 }
 

@@ -61,6 +61,7 @@ func NewBadgerBackupExecutor(
 	if err := os.MkdirAll(backupDir, 0700); err != nil {
 		panic(fmt.Errorf("failed to create backup directory: %w", err))
 	}
+
 	return &badgerBackupExecutor{
 		NodeID:              nodeID,
 		DB:                  db,
@@ -151,7 +152,9 @@ func (b *badgerBackupExecutor) SaveVersionInfo(counter, since uint64) error {
 	if err != nil {
 		return err
 	}
+
 	versionFile := filepath.Join(b.BackupDir, "latest.version")
+	
 	return os.WriteFile(versionFile, data, 0600)
 }
 
@@ -170,7 +173,9 @@ func (b *badgerBackupExecutor) LoadVersionInfo() (BadgerBackupVersionInfo, error
 		}
 		return info, err
 	}
+
 	err = json.Unmarshal(data, &info)
+
 	return info, err
 }
 

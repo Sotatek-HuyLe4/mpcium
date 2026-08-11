@@ -68,7 +68,6 @@ func newECDSASigningSession(
 	ckd *CKD,
 	sessionNonce *big.Int,
 ) *ecdsaSigningSession {
-
 	return &ecdsaSigningSession{
 		session: session{
 			walletID:           walletID,
@@ -126,6 +125,7 @@ func (s *ecdsaSigningSession) Init(tx *big.Int) error {
 
 	if len(s.participantPeerIDs) < keyInfo.Threshold+1 {
 		logger.Warn("Not enough participants to sign", "participants", s.participantPeerIDs, "expected", keyInfo.Threshold+1)
+
 		return ErrNotEnoughParticipants
 	}
 
@@ -145,6 +145,7 @@ func (s *ecdsaSigningSession) Init(tx *big.Int) error {
 	if err != nil {
 		return errors.Wrap(err, "Failed to get wallet data from KVStore")
 	}
+
 	// Check if all the participants of the key are present
 	var data keygen.LocalPartySaveData
 	err = json.Unmarshal(keyData, &data)
@@ -158,6 +159,7 @@ func (s *ecdsaSigningSession) Init(tx *big.Int) error {
 		if errorDerivation != nil {
 			return errors.Wrap(errorDerivation, fmt.Sprintf("Failed to derive key, derivationPath: %v", s.derivationPath))
 		}
+
 		keyDerivationDelta := il
 		err = s.ckd.ECDSAUpdateSinglePublicKeyAndAdjustBigXj(keyDerivationDelta, &data, extendedChildPk.PublicKey, tss.S256())
 		if err != nil {
@@ -169,15 +171,18 @@ func (s *ecdsaSigningSession) Init(tx *big.Int) error {
 	} else {
 		s.party = signing.NewLocalParty(tx, params, data, s.outCh, s.endCh)
 	}
+
 	s.data = &data
 	s.version = keyInfo.Version
 	s.tx = tx
 	logger.Info("Initialized sigining session successfully!")
+
 	return nil
 }
 
 func (s *ecdsaSigningSession) Sign(onSuccess func(data []byte)) {
 	logger.Info("Starting signing", "walletID", s.walletID)
+
 	go func() {
 		if err := s.party.Start(); err != nil {
 			s.sendErr(err)

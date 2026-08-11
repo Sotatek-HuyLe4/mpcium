@@ -59,6 +59,7 @@ func NewSigningConsumer(
 	signingResultQueue messaging.MessageQueue,
 ) SigningConsumer {
 	mpcThreshold := viper.GetInt("mpc_threshold")
+
 	return &signingConsumer{
 		natsConn:           natsConn,
 		pubsub:             pubsub,
@@ -85,8 +86,10 @@ func (sc *signingConsumer) waitForSufficientPeers(ctx context.Context) error {
 		case <-ctx.Done():
 			if ctx.Err() == context.Canceled {
 				logger.Info("SigningConsumer: Shutdown signal received during peer readiness wait")
+
 				return nil
 			}
+
 			return ctx.Err()
 		case <-ticker.C:
 			readyPeers := sc.peerRegistry.GetReadyPeersCount()
@@ -94,8 +97,10 @@ func (sc *signingConsumer) waitForSufficientPeers(ctx context.Context) error {
 				logger.Info("SigningConsumer: Sufficient peers ready, starting message consumption",
 					"ready", readyPeers,
 					"t+1", requiredPeers)
+
 				return nil
 			}
+
 			logger.Info("SigningConsumer: Waiting for more peers to be ready",
 				"ready", readyPeers,
 				"t+1", requiredPeers)
@@ -110,6 +115,7 @@ func (sc *signingConsumer) Run(ctx context.Context) error {
 		if err == context.Canceled {
 			return nil
 		}
+
 		return fmt.Errorf("failed to wait for sufficient peers: %w", err)
 	}
 
@@ -124,8 +130,10 @@ func (sc *signingConsumer) Run(ctx context.Context) error {
 			logger.Info("SigningConsumer: Shutdown during subscription setup")
 			return nil
 		}
+
 		return fmt.Errorf("failed to subscribe to signing events: %w", err)
 	}
+
 	sc.jsSub = sub
 	logger.Info("SigningConsumer: Subscribed to signing events")
 
@@ -165,16 +173,20 @@ func (sc *signingConsumer) handleSigningEvent(msg jetstream.Msg) {
 		logger.Error("SigningConsumer: Failed to unmarshal signing message", err)
 		sc.handleSigningError(signingMsg, event.ErrorCodeUnmarshalFailure, err, sessionID, clientID)
 		_ = msg.Ack()
+
 		return
 	}
 
 	if !sc.peerRegistry.AreMajorityReady() {
 		requiredPeers := int64(sc.mpcThreshold + 1)
-		err := fmt.Errorf("not enough peers to process signing request: ready=%d, required=%d", sc.peerRegistry.GetReadyPeersCount(), requiredPeers)
+		err := fmt.Errorf("not enough peers to process signing request: ready=%d, required=%d",
+			sc.peerRegistry.GetReadyPeersCount(), requiredPeers)
 		sc.handleSigningError(signingMsg, event.ErrorCodeNotMajority, err, sessionID, clientID)
 		_ = msg.Ack()
+
 		return
 	}
+
 	// Create a reply inbox to receive the signing event response.
 	replyInbox := nats.NewInbox()
 
@@ -183,6 +195,7 @@ func (sc *signingConsumer) handleSigningEvent(msg jetstream.Msg) {
 	if err != nil {
 		logger.Error("SigningConsumer: Failed to subscribe to reply inbox", err)
 		_ = msg.Nak()
+
 		return
 	}
 	defer func() {
@@ -201,6 +214,7 @@ func (sc *signingConsumer) handleSigningEvent(msg jetstream.Msg) {
 	if err := sc.pubsub.PublishWithReply(MPCSignEvent, replyInbox, msg.Data(), headers); err != nil {
 		logger.Error("SigningConsumer: Failed to publish signing event with reply", err)
 		_ = msg.Nak()
+
 		return
 	}
 
@@ -216,16 +230,20 @@ func (sc *signingConsumer) handleSigningEvent(msg jetstream.Msg) {
 		if err != nil {
 			if err == nats.ErrTimeout {
 				_ = msg.InProgress()
+
 				continue
 			}
+
 			logger.Error("SigningConsumer: Error receiving reply message", err)
 			break
 		}
+
 		if replyMsg != nil {
 			logger.Info("SigningConsumer: Completed signing event; reply received")
 			if ackErr := msg.Ack(); ackErr != nil {
 				logger.Error("SigningConsumer: ACK failed", ackErr)
 			}
+			
 			return
 		}
 	}
@@ -237,7 +255,12 @@ func (sc *signingConsumer) handleSigningEvent(msg jetstream.Msg) {
 	_ = msg.Nak()
 }
 
-func (sc *signingConsumer) handleSigningError(signMsg types.SignTxMessage, errorCode event.ErrorCode, err error, sessionID, clientID string) {
+func (sc *signingConsumer) handleSigningError(
+	signMsg types.SignTxMessage,
+	errorCode event.ErrorCode,
+	err error,
+	sessionID, clientID string,
+) {
 	signingResult := event.SigningResultEvent{
 		ResultType:          event.ResultTypeError,
 		ErrorCode:           errorCode,
@@ -253,6 +276,7 @@ func (sc *signingConsumer) handleSigningError(signMsg types.SignTxMessage, error
 			"walletID", signMsg.WalletID,
 			"txID", signMsg.TxID,
 		)
+
 		return
 	}
 
@@ -274,8 +298,10 @@ func (sc *signingConsumer) Close() error {
 			logger.Error("SigningConsumer: Failed to unsubscribe from JetStream", err)
 			return err
 		}
+
 		logger.Info("SigningConsumer: Unsubscribed from JetStream")
 	}
+
 	return nil
 }
 
@@ -286,5 +312,6 @@ func buildIdempotentKey(baseID, clientID, sessionID, formatTemplate string) stri
 	} else {
 		uniqueKey = baseID
 	}
+
 	return fmt.Sprintf(formatTemplate, event.ScopedOperationID(clientID, uniqueKey))
 }

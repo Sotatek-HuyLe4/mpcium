@@ -167,6 +167,7 @@ func runNode(ctx context.Context, c *cli.Command) error {
 		if err != nil {
 			logger.Fatal("Failed to load peers from file", err)
 		}
+
 		if err := config.SyncPeersToConsul(consulClient.KV(), filePeers); err != nil {
 			logger.Fatal("Failed to sync peers to Consul", err)
 		}
@@ -272,7 +273,6 @@ func runNode(ctx context.Context, c *cli.Command) error {
 		natsConn,
 		singingResultQueue,
 	)
-
 	timeoutConsumer.Run()
 	defer timeoutConsumer.Close()
 
@@ -386,11 +386,12 @@ func runNode(ctx context.Context, c *cli.Command) error {
 		logger.Info("All consumers have finished")
 		close(errChan)
 	}()
-	
+
 	for err := range errChan {
 		if err != nil {
 			logger.Error("Consumer error received", err)
 			cancel()
+			
 			return err
 		}
 	}
@@ -488,7 +489,7 @@ func maskString(s string) string {
 }
 
 // Check required configuration values are present
-func checkRequiredConfigValues(appConfig *config.AppConfig) {
+func checkRequiredConfigValues(_ *config.AppConfig) {
 	// Show warning if we're using file-based config but no password is set
 	if viper.GetString("badger_password") == "" {
 		logger.Fatal("Badger password is required", nil)
@@ -535,6 +536,7 @@ func GetPeerIDs(peers []config.Peer) []string {
 	for _, peer := range peers {
 		peersIDs = append(peersIDs, peer.ID)
 	}
+
 	return peersIDs
 }
 
@@ -578,6 +580,7 @@ func NewBadgerKV(nodeName, nodeID string, appConfig *config.AppConfig) *kvstore.
 		logger.Fatal("Failed to create badger kv store", err)
 	}
 	logger.Info("Connected to badger kv store", "path", dbPath, "backup_dir", backupDir)
+
 	return badgerKv
 }
 
@@ -585,13 +588,16 @@ func StartPeriodicBackup(ctx context.Context, badgerKV *kvstore.BadgerKVStore, p
 	if periodSeconds <= 0 {
 		periodSeconds = DefaultBackupPeriodSeconds
 	}
+
 	backupTicker := time.NewTicker(time.Duration(periodSeconds) * time.Second)
 	backupCtx, backupCancel := context.WithCancel(ctx)
+
 	go func() {
 		for {
 			select {
 			case <-backupCtx.Done():
 				logger.Info("Backup background job stopped")
+
 				return
 			case <-backupTicker.C:
 				logger.Info("Running periodic BadgerDB backup...")
@@ -604,6 +610,7 @@ func StartPeriodicBackup(ctx context.Context, badgerKV *kvstore.BadgerKVStore, p
 			}
 		}
 	}()
+
 	return backupCancel
 }
 

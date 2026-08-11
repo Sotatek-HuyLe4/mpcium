@@ -219,7 +219,7 @@ func (ec *eventConsumer) handleKeyGenEvent(natMsg *nats.Msg) {
 	eddsaSession, err := ec.node.CreateKeyGenSession(mpc.SessionTypeEDDSA, walletID, ec.mpcThreshold, ec.genKeyResultQueue, sessionNonce)
 	if err != nil {
 		ec.handleKeygenSessionError(walletID, err, "Failed to create EdDSA key generation session", natMsg)
-		
+
 		return
 	}
 	if err := ecdsaSession.Init(); err != nil {
@@ -344,7 +344,7 @@ func (ec *eventConsumer) handleKeyGenEvent(natMsg *nats.Msg) {
 		ec.handleKeygenSessionError(walletID, err, "Failed to publish key generation success message", natMsg)
 		return
 	}
-	
+
 	ec.sendReplyToRemoveMsg(natMsg)
 	logger.Info("[COMPLETED KEY GEN] Key generation completed successfully", "walletID", walletID)
 }
@@ -403,6 +403,7 @@ func (ec *eventConsumer) startSigningEventWorker() {
 
 	for natMsg := range ec.signingMsgBuffer {
 		semaphore <- struct{}{} // acquire a slot
+
 		go func(msg *nats.Msg) {
 			defer func() { <-semaphore }() // release the slot when done
 			ec.handleSigningEvent(msg)
@@ -428,18 +429,21 @@ func (ec *eventConsumer) handleSigningEvent(natMsg *nats.Msg) {
 	err := json.Unmarshal(raw, &msg)
 	if err != nil {
 		logger.Error("Failed to unmarshal signing message", err)
+
 		return
 	}
 
 	err = ec.identityStore.VerifyInitiatorMessage(&msg)
 	if err != nil {
 		logger.Error("Failed to verify initiator message", err)
+
 		return
 	}
 
 	err = ec.identityStore.AuthorizeInitiatorMessage(&msg)
 	if err != nil {
 		logger.Error("Failed to authorize initiator message", err)
+
 		return
 	}
 
@@ -466,6 +470,7 @@ func (ec *eventConsumer) handleSigningEvent(natMsg *nats.Msg) {
 			"Duplicate session",
 			natMsg,
 		)
+
 		return
 	}
 
@@ -486,6 +491,7 @@ func (ec *eventConsumer) handleSigningEvent(natMsg *nats.Msg) {
 	idempotentKey := composeSigningIdempotentKey(msg.TxID, natMsg)
 	resultTopic := event.SigningResultSubject(natMsg.Header.Get(event.ClientIDHeader))
 	var sessionErr error
+
 	switch msg.KeyType {
 	case types.KeyTypeSecp256k1:
 		session, sessionErr = ec.node.CreateSigningSession(
@@ -514,6 +520,7 @@ func (ec *eventConsumer) handleSigningEvent(natMsg *nats.Msg) {
 	default:
 		sessionErr = fmt.Errorf("unsupported key type: %v", msg.KeyType)
 	}
+
 	if sessionErr != nil {
 		if errors.Is(sessionErr, mpc.ErrNotEnoughParticipants) {
 			logger.Info(
@@ -558,10 +565,12 @@ func (ec *eventConsumer) handleSigningEvent(natMsg *nats.Msg) {
 			"Failed to init signing session",
 			natMsg,
 		)
+
 		return
 	}
 
 	ctx, done := context.WithCancel(context.Background())
+
 	go func() {
 		for {
 			select {
@@ -607,6 +616,7 @@ func (ec *eventConsumer) handleSigningEvent(natMsg *nats.Msg) {
 		done()
 		ec.sendReplyToRemoveMsg(natMsg)
 	}
+	
 	go session.Sign(onSuccess)
 }
 
@@ -650,11 +660,16 @@ func (ec *eventConsumer) handleSigningSessionError(walletID, txID, networkIntern
 			"walletID", walletID,
 			"txID", txID,
 		)
+
 		return
 	}
-	err = ec.signingResultQueue.Enqueue(event.SigningResultSubject(natMsg.Header.Get(event.ClientIDHeader)), signingResultBytes, &messaging.EnqueueOptions{
-		IdempotententKey: composeSigningIdempotentKey(txID, natMsg),
-	})
+
+	err = ec.signingResultQueue.Enqueue(
+		event.SigningResultSubject(natMsg.Header.Get(event.ClientIDHeader)),
+		signingResultBytes,
+		&messaging.EnqueueOptions{
+			IdempotententKey: composeSigningIdempotentKey(txID, natMsg),
+		})
 	if err != nil {
 		logger.Error("Failed to enqueue signing result event", err,
 			"walletID", walletID,
@@ -662,6 +677,7 @@ func (ec *eventConsumer) handleSigningSessionError(walletID, txID, networkIntern
 			"payload", string(signingResultBytes),
 		)
 	}
+
 	ec.sendReplyToRemoveMsg(natMsg)
 }
 
@@ -1056,6 +1072,7 @@ func composeIdempotentKey(baseID string, natMsg *nats.Msg, formatTemplate string
 	} else {
 		uniqueKey = baseID
 	}
+
 	return fmt.Sprintf(formatTemplate, event.ScopedOperationID(natMsg.Header.Get(event.ClientIDHeader), uniqueKey))
 }
 

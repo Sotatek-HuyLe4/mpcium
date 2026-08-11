@@ -72,6 +72,7 @@ func NewNode(
 
 	// Start watching peers - ECDH is now handled by the registry
 	go peerRegistry.WatchPeersReady()
+
 	return node
 }
 
@@ -123,7 +124,7 @@ func (p *Node) createECDSAKeyGenSession(walletID string, threshold int, version 
 		p.identityStore,
 		sessionNonce,
 	)
-	
+
 	return session, nil
 }
 
@@ -185,7 +186,7 @@ func (p *Node) CreateSigningSession(
 		return nil, err
 	}
 
-	selfPartyID, allPartyIDs := p.generatePartyIDs(PurposeKeygen, readyParticipantIDs, version)
+	selfPartyID, allPartyIDs := p.generatePartyIDs(PurposeSign, readyParticipantIDs, version)
 
 	switch sessionType {
 	case SessionTypeECDSA:
@@ -239,6 +240,7 @@ func (p *Node) CreateSigningSession(
 
 func (p *Node) getKeyInfo(sessionType SessionType, walletID string) (*keyinfo.KeyInfo, error) {
 	var keyID string
+
 	switch sessionType {
 	case SessionTypeECDSA:
 		keyID = fmt.Sprintf("ecdsa:%s", walletID)
@@ -247,6 +249,7 @@ func (p *Node) getKeyInfo(sessionType SessionType, walletID string) (*keyinfo.Ke
 	default:
 		return nil, errors.New("unsupported session type")
 	}
+
 	return p.keyinfoStore.Get(keyID)
 }
 
@@ -266,6 +269,7 @@ func (p *Node) ensureNodeIsParticipant(keyInfo *keyinfo.KeyInfo) error {
 	if !slices.Contains(keyInfo.ParticipantPeerIDs, p.nodeID) {
 		return ErrNotInParticipantList
 	}
+
 	return nil
 }
 
@@ -425,7 +429,7 @@ const walletCreationResultPrefix = "wallet_creation_result_prefix"
 
 func (p *Node) StoreWalletCreationResult(walletID string, result []byte) error {
 	key := fmt.Sprintf("%s:%s", walletCreationResultPrefix, walletID)
-	
+
 	return p.kvstore.Put(key, result)
 }
 
@@ -450,6 +454,7 @@ func (p *Node) generatePreParams() []*keygen.LocalPreParams {
 	start := time.Now()
 	// Try to load from kvstore
 	preParams := make([]*keygen.LocalPreParams, 2)
+
 	for i := 0; i < 2; i++ {
 		key := fmt.Sprintf("pre_params_%d", i)
 		val, err := p.kvstore.Get(key)
@@ -459,17 +464,21 @@ func (p *Node) generatePreParams() []*keygen.LocalPreParams {
 			if err != nil {
 				logger.Fatal("Unmarshal pre params failed", err)
 			}
+
 			continue
 		}
+
 		// Not found, generate and save
 		params, err := keygen.GeneratePreParams(5 * time.Minute)
 		if err != nil {
 			logger.Fatal("Generate pre params failed", err)
 		}
+
 		bytes, err := json.Marshal(params)
 		if err != nil {
 			logger.Fatal("Marshal pre params failed", err)
 		}
+
 		err = p.kvstore.Put(key, bytes)
 		if err != nil {
 			logger.Fatal("Save pre params failed", err)
@@ -477,11 +486,13 @@ func (p *Node) generatePreParams() []*keygen.LocalPreParams {
 		preParams[i] = params
 	}
 	logger.Info("Generate pre params successfully!", "elapsed", time.Since(start).Milliseconds())
+
 	return preParams
 }
 
 func (p *Node) getVersion(sessionType SessionType, walletID string) int {
 	var composeKey string
+
 	switch sessionType {
 	case SessionTypeECDSA:
 		composeKey = fmt.Sprintf("ecdsa:%s", walletID)
@@ -490,11 +501,13 @@ func (p *Node) getVersion(sessionType SessionType, walletID string) int {
 	default:
 		logger.Fatal("Unknown session type", errors.New("Unknown session type"))
 	}
+
 	keyinfo, err := p.keyinfoStore.Get(composeKey)
 	if err != nil {
 		logger.Error("Get keyinfo failed", err, "walletID", walletID)
 		return DefaultVersion
 	}
+
 	return keyinfo.Version
 }
 

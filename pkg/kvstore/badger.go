@@ -117,6 +117,7 @@ func (b *BadgerKVStore) Backup() error {
 	if b.BackupExecutor == nil {
 		return errors.New("backup executor is not initialized")
 	}
+	
 	return b.BackupExecutor.Execute()
 }
 

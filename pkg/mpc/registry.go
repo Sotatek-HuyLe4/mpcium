@@ -118,16 +118,20 @@ func (r *registry) registerReadyPairs(peerIDs []string) {
 		if !exist {
 			atomic.AddInt64(&r.readyCount, 1)
 			logger.Info("Register", "peerID", peerID)
+
 			if r.onPeerConnected != nil {
 				r.onPeerConnected(peerID)
 			}
+
 			go r.triggerECDHExchange()
 		} else if !ready {
 			atomic.AddInt64(&r.readyCount, 1)
 			logger.Info("Reconnecting...", "peerID", peerID)
+
 			if r.onPeerReConnected != nil {
 				r.onPeerReConnected(peerID)
 			}
+
 			go r.triggerECDHExchange()
 		}
 
@@ -192,6 +196,7 @@ func (r *registry) Ready() error {
 			logger.Error("Failed to parse health check data", parseErr, "data", string(data))
 			return
 		}
+
 		logger.Debug("Health check ok", "peerID", peerID, "isEcdhReady", isEcdhReady)
 		if !isEcdhReady {
 			logger.Info("[ECDH exchange retriggerd] not all peers are ready", "peerID", peerID)
@@ -201,6 +206,7 @@ func (r *registry) Ready() error {
 	if err != nil {
 		return fmt.Errorf("Listen health check failed: %w", err)
 	}
+
 	return nil
 }
 
@@ -246,6 +252,7 @@ func (r *registry) WatchPeersReady() {
 			}
 
 		}
+
 		r.registerReadyPairs(newReadyPeerIDs)
 	}
 
@@ -269,6 +276,7 @@ func (r *registry) checkPeersHealth() {
 			logger.Error("List ready keys failed", err)
 			continue
 		}
+
 		readyPeerIDs := r.getReadyPeersFromKVStore(pairs)
 		for _, peerID := range readyPeerIDs {
 			err := r.healthCheck.SendToOtherWithRetry(r.composeHealthCheckTopic(peerID), []byte(r.composeHealthData()), messaging.RetryConfig{
@@ -278,12 +286,14 @@ func (r *registry) checkPeersHealth() {
 			if err != nil && strings.Contains(err.Error(), "no responders") {
 				failureCount[peerID]++
 				logger.Warn("No response from peer", "peerID", peerID, "consecutiveFailures", failureCount[peerID], "maxFailures", maxFailures)
+
 				if failureCount[peerID] >= maxFailures {
 					logger.Warn("Evicting unresponsive peer from Consul", "peerID", peerID)
 					_, err := r.consulKV.Delete(r.readyKey(peerID), nil)
 					if err != nil {
 						logger.Error("Delete ready key failed", err)
 					}
+
 					delete(failureCount, peerID)
 				}
 			} else {
@@ -309,6 +319,7 @@ func (r *registry) GetReadyPeersIncludeSelf() []string {
 	}
 
 	peerIDs = append(peerIDs, r.nodeID) // append self
+
 	return peerIDs
 }
 
@@ -344,6 +355,7 @@ func (r *registry) ArePeersReady() bool {
 //  2. Symmetric keys are fully established among all ready peers (excluding self).
 func (r *registry) AreMajorityReady() bool {
 	readyCount := r.GetReadyPeersCount()
+
 	return int(readyCount) >= r.mpcThreshold+1 && r.isECDHReady()
 }
 
@@ -417,6 +429,7 @@ func parseHealthDataSplit(s string) (peerID string, ready bool, err error) {
 	if err != nil {
 		return "", false, err
 	}
+
 	return peerID, ready, nil
 }
 

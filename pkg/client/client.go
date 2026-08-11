@@ -178,6 +178,7 @@ func (c *mpcClient) SignTransaction(msg *types.SignTxMessage) error {
 	if err != nil {
 		return fmt.Errorf("SignTransaction: raw payload error: %w", err)
 	}
+
 	signature, err := c.signer.Sign(raw)
 	if err != nil {
 		return fmt.Errorf("SignTransaction: failed to sign message: %w", err)
@@ -192,6 +193,7 @@ func (c *mpcClient) SignTransaction(msg *types.SignTxMessage) error {
 	if err := c.signingBroker.PublishMessage(context.Background(), event.SigningRequestTopic, bytes, c.requestHeaders()); err != nil {
 		return fmt.Errorf("SignTransaction: publish error: %w", err)
 	}
+	
 	return nil
 }
 

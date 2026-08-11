@@ -27,6 +27,7 @@ func (n *Node) generatePartyIDs(
 		if peerID == n.nodeID {
 			self = partyID
 		}
+		
 		partyIDs = append(partyIDs, partyID)
 	}
 
@@ -43,6 +44,7 @@ func (n *Node) generatePartyIDs(
 func createPartyID(nodeID string, label string, version int) *tss.PartyID {
 	partyID := uuid.NewString()
 	var key *big.Int
+
 	if version == BackwardCompatibleVersion {
 		key = new(big.Int).SetBytes([]byte(nodeID))
 	} else {

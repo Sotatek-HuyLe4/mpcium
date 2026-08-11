@@ -204,7 +204,7 @@ func (sc *keygenConsumer) handleKeygenEvent(msg jetstream.Msg) {
 
 		if replyMsg != nil {
 			logger.Info("KeygenConsumer: Completed keygen event; reply received")
-			
+
 			if ackErr := msg.Ack(); ackErr != nil {
 				logger.Error("KeygenConsumer: ACK failed", ackErr)
 			}
@@ -259,7 +259,9 @@ func (sc *keygenConsumer) Close() error {
 			logger.Error("KeygenConsumer: Failed to unsubscribe from JetStream", err)
 			return err
 		}
+
 		logger.Info("KeygenConsumer: Unsubscribed from JetStream")
 	}
+
 	return nil
 }

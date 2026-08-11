@@ -33,13 +33,16 @@ func NewCKDFromHex(hexStr string) (*CKD, error) {
 	if hexStr == "" {
 		return nil, fmt.Errorf("chain code is empty")
 	}
+
 	code, err := hex.DecodeString(hexStr)
 	if err != nil {
 		return nil, fmt.Errorf("invalid chain code hex: %w", err)
 	}
+
 	if len(code) != chainCodeLength {
 		return nil, fmt.Errorf("%w: got %d, want %d", ErrInvalidChainCode, len(code), chainCodeLength)
 	}
+
 	return &CKD{masterChainCode: code}, nil
 }
 
@@ -53,10 +56,16 @@ func (c *CKD) GetMasterChainCode() []byte {
 // Derive derives a child key from the master public key using the given path.
 // Uses standard BIP32 derivation: same master key + same path = same child key.
 // Each level in the path automatically gets its own chain code via HMAC(parent_chain_code, pubkey || index).
-func (c *CKD) Derive(walletID string, masterPub *crypto.ECPoint, path []uint32, curve elliptic.Curve) (*big.Int, *ckd.ExtendedKey, error) {
+func (c *CKD) Derive(
+	walletID string,
+	masterPub *crypto.ECPoint,
+	path []uint32,
+	curve elliptic.Curve,
+) (*big.Int, *ckd.ExtendedKey, error) {
 	if masterPub == nil {
 		return nil, nil, ErrNilPoint
 	}
+
 	if curve == nil {
 		return nil, nil, errors.New("curve cannot be nil")
 	}
@@ -67,7 +76,12 @@ func (c *CKD) Derive(walletID string, masterPub *crypto.ECPoint, path []uint32, 
 }
 
 // derivingPubkeyFromPath performs the actual derivation.
-func (c *CKD) derivingPubkeyFromPath(masterPub *crypto.ECPoint, chainCode []byte, path []uint32, ec elliptic.Curve) (*big.Int, *ckd.ExtendedKey, error) {
+func (c *CKD) derivingPubkeyFromPath(
+	masterPub *crypto.ECPoint,
+	chainCode []byte,
+	path []uint32,
+	ec elliptic.Curve,
+) (*big.Int, *ckd.ExtendedKey, error) {
 	net := &chaincfg.MainNetParams
 	parent := &ckd.ExtendedKey{
 		// tss-lib v3 changed ExtendedKey.PublicKey from *crypto.ECPoint to ecdsa.PublicKey.
@@ -87,6 +101,7 @@ func (c *CKD) derivingPubkeyFromPath(masterPub *crypto.ECPoint, chainCode []byte
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to derive child key: %w", err)
 	}
+
 	return delta, extKey, nil
 }
 
@@ -99,6 +114,7 @@ func (c *CKD) ECDSAUpdateSinglePublicKeyAndAdjustBigXj(delta *big.Int, key *ecds
 	if err != nil {
 		return fmt.Errorf("invalid child public key: %w", err)
 	}
+
 	gDelta := crypto.ScalarBaseMult(ec, delta)
 	key.ECDSAPub = childPoint
 	for i := range key.BigXj {
@@ -106,8 +122,10 @@ func (c *CKD) ECDSAUpdateSinglePublicKeyAndAdjustBigXj(delta *big.Int, key *ecds
 		if err != nil {
 			return fmt.Errorf("failed to update BigXj[%d]: %w", i, err)
 		}
+
 		key.BigXj[i] = updated
 	}
+	
 	return nil
 }
 

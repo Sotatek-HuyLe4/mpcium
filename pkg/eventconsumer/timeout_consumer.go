@@ -82,6 +82,7 @@ func (tc *timeOutConsumer) Run() {
 				return
 			}
 			logger.Info("Published signing result event for timeout", "txID", signErrorResult.TxID)
+			
 			return
 		}
 	})

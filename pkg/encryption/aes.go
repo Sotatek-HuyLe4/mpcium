@@ -13,15 +13,19 @@ func EncryptAESGCM(plain, key []byte) (ciphertext, nonce []byte, err error) {
 	if err != nil {
 		return nil, nil, err
 	}
+
 	aead, err := cipher.NewGCM(block)
 	if err != nil {
 		return nil, nil, err
 	}
+
 	nonce = make([]byte, aead.NonceSize())
 	if _, err = rand.Read(nonce); err != nil {
 		return nil, nil, err
 	}
+
 	ciphertext = aead.Seal(nil, nonce, plain, nil)
+	
 	return ciphertext, nonce, nil
 }
 

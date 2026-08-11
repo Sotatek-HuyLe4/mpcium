@@ -113,6 +113,7 @@ func (e *ecdhSession) ListenKeyExchange() error {
 			e.errCh <- err
 			return
 		}
+
 		sharedSecret, err := e.privateKey.ECDH(peerPublicKey)
 		if err != nil {
 			e.errCh <- err
@@ -137,6 +138,7 @@ func (e *ecdhSession) ListenKeyExchange() error {
 	if err != nil {
 		return fmt.Errorf("failed to subscribe to ECDH topic: %w", err)
 	}
+	
 	return nil
 }
 
@@ -198,7 +200,6 @@ func (e *ecdhSession) deriveSymmetricKey(sharedSecret []byte, peerID string) []b
 
 	// Salt can be nil or a random value; here we use nil
 	var salt []byte
-
 	hkdf := hkdf.New(hash, sharedSecret, salt, info)
 
 	// Derive a 32-byte symmetric key (suitable for AES-256)
@@ -206,7 +207,9 @@ func (e *ecdhSession) deriveSymmetricKey(sharedSecret []byte, peerID string) []b
 	_, err := hkdf.Read(symmetricKey)
 	if err != nil {
 		e.errCh <- err
+
 		return nil
 	}
+
 	return symmetricKey
 }
