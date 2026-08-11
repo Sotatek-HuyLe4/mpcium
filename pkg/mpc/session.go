@@ -495,6 +495,7 @@ func (s *session) loadOldShareDataGeneric(walletID string, version int, dest any
 	if err := json.Unmarshal(keyData, dest); err != nil {
 		return fmt.Errorf("failed to unmarshal wallet data: %w", err)
 	}
+	
 	return nil
 }
 

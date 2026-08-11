@@ -309,6 +309,7 @@ func (p *Node) CreateReshareSession(
 	if err != nil {
 		return nil, fmt.Errorf("failed to get session key prefix: %w", err)
 	}
+
 	keyInfoKey := fmt.Sprintf("%s:%s", keyPrefix, walletID)
 	oldKeyInfo, err := p.keyinfoStore.Get(keyInfoKey)
 	if err != nil {
@@ -342,7 +343,11 @@ func (p *Node) CreateReshareSession(
 	)
 
 	if len(readyOldParticipantIDs) < oldKeyInfo.Threshold+1 {
-		return nil, fmt.Errorf("not enough peers to create resharing session! expected %d, got %d", oldKeyInfo.Threshold+1, len(readyOldParticipantIDs))
+		return nil, fmt.Errorf(
+			"not enough peers to create resharing session! expected %d, got %d",
+			oldKeyInfo.Threshold+1,
+			len(readyOldParticipantIDs),
+		)
 	}
 
 	if !isNewPeer {
@@ -370,6 +375,7 @@ func (p *Node) CreateReshareSession(
 	switch sessionType {
 	case SessionTypeECDSA:
 		preParams := p.ecdsaPreParams[0]
+		
 		if isNewPeer {
 			// Alternate pre-params for new nodes based on version: v1->1, v2->0, v3->1...
 			preParams = p.ecdsaPreParams[version%2]

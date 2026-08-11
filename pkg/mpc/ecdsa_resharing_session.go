@@ -60,7 +60,6 @@ func NewECDSAReshareSession(
 	version int,
 	sessionNonce *big.Int,
 ) *ecdsaReshareSession {
-
 	realPartyIDs := oldPartyIDs
 	if isNewParty {
 		realPartyIDs = newPartyIDs
@@ -136,12 +135,14 @@ func (s *ecdsaReshareSession) GetLegacyCommitteePeers() []string {
 		for _, b := range B {
 			seen[b] = true
 		}
+
 		var result []string
 		for _, a := range A {
 			if !seen[a] {
 				result = append(result, a)
 			}
 		}
+
 		return result
 	}
 
@@ -168,8 +169,10 @@ func (s *ecdsaReshareSession) Init() error {
 
 	s.party = resharing.NewLocalParty(s.reshareParams, share, s.outCh, s.endCh)
 
-	logger.Infof("[INITIALIZED] Initialized resharing session successfully partyID: %s, peerIDs %s, walletID %s, oldThreshold = %d, newThreshold = %d",
-		s.selfPartyID, s.partyIDs, s.walletID, s.threshold, s.reshareParams.NewThreshold())
+	logger.Infof(
+		"[INITIALIZED] Initialized resharing session successfully partyID: %s, peerIDs %s, walletID %s, oldThreshold = %d, newThreshold = %d",
+		s.selfPartyID, s.partyIDs, s.walletID, s.threshold, s.reshareParams.NewThreshold(),
+	)
 	return nil
 }
 
@@ -186,7 +189,6 @@ func (s *ecdsaReshareSession) Reshare(done func()) {
 		case saveData := <-s.endCh:
 			// skip for old committee
 			if saveData.ECDSAPub != nil {
-
 				defer security.ZeroEcdsaKeygenLocalPartySaveData(saveData)
 
 				keyBytes, err := json.Marshal(saveData)
@@ -214,6 +216,7 @@ func (s *ecdsaReshareSession) Reshare(done func()) {
 					s.ErrCh <- err
 					return
 				}
+				
 				// Get public key
 				publicKey := saveData.ECDSAPub
 				pubKey := &ecdsa.PublicKey{

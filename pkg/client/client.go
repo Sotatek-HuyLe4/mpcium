@@ -193,7 +193,7 @@ func (c *mpcClient) SignTransaction(msg *types.SignTxMessage) error {
 	if err := c.signingBroker.PublishMessage(context.Background(), event.SigningRequestTopic, bytes, c.requestHeaders()); err != nil {
 		return fmt.Errorf("SignTransaction: publish error: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -221,6 +221,7 @@ func (c *mpcClient) Resharing(msg *types.ResharingMessage) error {
 	if err != nil {
 		return fmt.Errorf("Resharing: raw payload error: %w", err)
 	}
+
 	signature, err := c.signer.Sign(raw)
 	if err != nil {
 		return fmt.Errorf("Resharing: failed to sign message: %w", err)
@@ -235,6 +236,7 @@ func (c *mpcClient) Resharing(msg *types.ResharingMessage) error {
 	if err := c.pubsub.Publish(eventconsumer.MPCReshareEvent, bytes, c.requestHeaders()); err != nil {
 		return fmt.Errorf("Resharing: publish error: %w", err)
 	}
+	
 	return nil
 }
 
@@ -247,8 +249,10 @@ func (c *mpcClient) OnResharingResult(callback func(event event.ResharingResultE
 			logger.Error("Failed to unmarshal reshare success event", err, "raw", string(msg))
 			return err
 		}
+
 		logger.Info("Deserialized reshare success event", "event", event)
 		callback(event)
+
 		return nil
 	})
 

@@ -8,14 +8,15 @@ import (
 	"slices"
 	"syscall"
 
+	"github.com/google/uuid"
+	"github.com/nats-io/nats.go"
+	"github.com/spf13/viper"
+
 	"github.com/fystack/mpcium/pkg/client"
 	"github.com/fystack/mpcium/pkg/config"
 	"github.com/fystack/mpcium/pkg/event"
 	"github.com/fystack/mpcium/pkg/logger"
 	"github.com/fystack/mpcium/pkg/types"
-	"github.com/google/uuid"
-	"github.com/nats-io/nats.go"
-	"github.com/spf13/viper"
 )
 
 func main() {
@@ -30,7 +31,6 @@ func main() {
 	if algorithm == "" {
 		algorithm = string(types.EventInitiatorKeyTypeEd25519)
 	}
-
 	// Validate algorithm
 	if !slices.Contains(
 		[]string{
@@ -49,6 +49,7 @@ func main() {
 			nil,
 		)
 	}
+	
 	natsURL := viper.GetString("nats.url")
 	natsConn, err := nats.Connect(natsURL)
 	if err != nil {
