@@ -1,13 +1,24 @@
+environment: development
+mpc_threshold: 2
+
 nats:
   url: nats://127.0.0.1:4222
+  # username: ""
+  # password: ""
+  # tls:
+  #   client_cert: ""
+  #   client_key: ""
+  #   ca_cert: ""
+
 consul:
   address: localhost:8500
+  # username: ""
+  # password: ""
+  # token: ""
 
-mpc_threshold: 2
-environment: development
-badger_password: "F))ysJp?E]ol&I;^"
-event_initiator_algorithm: "ed25519"  # or "ed25519", default: ed25519
-event_initiator_pubkey: "event_initiator_pubkey"
+# Event Initiator
+event_initiator_algorithm: "ed25519" # or "ed25519", default: ed25519
+event_initiator_pubkey: ""
 
 # Chain Code for HD Wallet Child Key Derivation (REQUIRED)
 # This is used for hierarchical deterministic (HD) wallet functionality to derive child keys.
@@ -15,16 +26,19 @@ event_initiator_pubkey: "event_initiator_pubkey"
 # Generate once with: openssl rand -hex 32
 # Example: chain_code: "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2"
 chain_code: ""
-db_path: "."  
+
+db_path: "./db"
+badger_password: ""
 backup_enabled: true
 backup_period_seconds: 300 # 5 minutes
-backup_dir: backups
+backup_dir: "./backups"
+
 max_concurrent_keygen: 2
 max_concurrent_signing: 10
-healthcheck:
-  enabled: false  # disabled by default, set to true for cloud deployment
-  address: "0.0.0.0:8080"
 
+healthcheck:
+  enabled: false # disabled by default, set to true for cloud deployment
+  address: "0.0.0.0:8080"
 
 # Authorization (optional)
 # authorization:
