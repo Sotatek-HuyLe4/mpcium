@@ -6,6 +6,9 @@ THRESHOLD=2
 BADGER_PASSWORD=$(openssl rand -hex 16)
 CONFIG_FILE="config.yaml"
 
+# We need to kill all the running mpcium processes
+pkill -9 -f "mpcium start"
+
 # Remove the existing .mpcium directory
 rm -rf .mpcium
 # Remove the existing config.yaml file
